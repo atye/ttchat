@@ -40,7 +40,7 @@ redirectPort: "8080"
 ```
 `ttchat` will listen on `http://localhost:8080` for Twitch's authentication result. So, your Twitch application must have `http://localhost:8080` for a redirect URL.
 
-If your `redirectPort` is `9000`, `ttchat` will listen on `http://localhost:9000` so your Twitch application should have `http://localhost:9000` for a redirect URL.
+If your `redirectPort` is `9000`, `ttchat` will listen on `http://localhost:9000` so your Twitch application must have `http://localhost:9000` for a redirect URL.
 
 # Running
 `ttchat -h`
