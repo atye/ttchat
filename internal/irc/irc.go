@@ -40,6 +40,10 @@ const (
 	UserHighlightColor = "#6441A5" //Twitch purple
 )
 
+var (
+	UserHighLightStyle = lipgloss.NewStyle().Bold(true).Background(lipgloss.Color(UserHighlightColor))
+)
+
 var _ terminal.Twitch = IRCService{}
 
 func NewIRCService(displayName string, channel string, irc IRC) IRCService {
@@ -62,7 +66,7 @@ func (c IRCService) GetMessageSource() <-chan types.Message {
 
 		styled.Name = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(styled.Color)).Render(styled.Name)
 		if incoming.Name == c.displayName {
-			styled.Name = lipgloss.NewStyle().Bold(true).Background(lipgloss.Color(UserHighlightColor)).Render(c.displayName)
+			styled.Name = UserHighLightStyle.Render(c.displayName)
 		}
 
 		c.upstream <- styled
