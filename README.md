@@ -6,7 +6,7 @@ Connect to a Twitch channel's chat from your terminal
 
   ### With Go
 
-```go get github.com/atye/ttchat```
+```go get github.com/atye/ttchat/cmd```
 
 ### Clone and build
 ```git clone https://github.com/atye/ttchat.git```

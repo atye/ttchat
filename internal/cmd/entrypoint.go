@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cmd
 
 import (
 	"context"
@@ -56,13 +56,6 @@ var (
 	ErrNoUsername = errors.New("no username in configuration file")
 )
 
-func main() {
-	if err := NewRootCmd().Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
-
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "ttchat",
@@ -70,7 +63,8 @@ func NewRootCmd() *cobra.Command {
 		Long: `
 ttchat is a terminal application that connects to a twitch channel's
 chat using a small configuration file. See repo for more details.
-	
+
+ttchat -h
 ttchat --channel ludwig
 ttchat --channel ludwig --lines 5
 `,
@@ -218,7 +212,7 @@ func getAccessToken(tokenFlagValue string, conf Config, verifier auth.TokenVerif
 
 	t, err := auth.GetOAuthToken(oauthConf, verifier, u)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	return t, nil
 }

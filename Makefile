@@ -1,5 +1,6 @@
 build:
-	go build -o bin/ttchat cmd/main.go
+	-mkdir -p ./bin
+	CGO_ENABLED=0 go build -o ./bin/ttchat ./main.go
 
 test:
 	go test -v -count=1 -v -cover -race ./...
