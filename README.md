@@ -31,7 +31,7 @@ redirectPort: "9999"
 
 `redirectPort` is the port that `ttchat` will use to spin up a temporary, localhost server used in the authentication process. If `redirectPort` is empty, port 9999 is used.
 
-Your Twitch application's list OAuth Redirect URLs must have a match for the URL of `ttchat`. If this was your configuration:
+Your Twitch application's list of OAuth Redirect URLs must have a match for the URL of `ttchat`. If this was your configuration:
 
 ```
 clientID: "123"
@@ -39,7 +39,7 @@ username: "foo"
 redirectPort: "8080"
 ```
 
-`ttchat` will listen on `http://localhost:8080` for Twitch's authentication result. So, your Twitch application must have `http://localhost:8080` for a redirect URL.
+`ttchat` would listen on `http://localhost:8080` for Twitch's authentication result. So, your Twitch application must have `http://localhost:8080` for a redirect URL.
 
 # Running
 `ttchat -h`
