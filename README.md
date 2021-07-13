@@ -17,7 +17,7 @@ You should see the binary at `./bin/ttchat`.
 
 # Configuration and Setup
 
- `ttchat` requires a configuration file in `$HOME/.ttchat/config.yaml` containing some account information so that `ttchat` can authenticate.
+ `ttchat` requires a configuration file in `$HOME/.ttchat/config.yaml` containing some account information for authentication.
 
 ```
 clientID: "your_twitch_client_id"
@@ -36,14 +36,13 @@ Your Twitch application's OAuth Redirect URLs must have a match for the URL of t
 ```
 clientID: "your_twitch_client_id"
 username: "your_twitch_login_username"
-redirect
-Port: "8080"
+redirectPort: "8080"
 ```
 `ttchat` will listen on `http://localhost:8080` for Twitch's authentication result. So, your Twitch application must have `http://localhost:8080` for a redirect URL.
 
 If your `redirectPort` is `9000`, `ttchat` will listen on `http://localhost:9000` so your Twitch application should have `http://localhost:9000` for a redirect URL.
 
 # Running
-ttchat -h
-ttchat --channel ludwig
-ttchat --channel ludwing --lines 10
+`ttchat -h`
+`ttchat --channel ludwig`
+`ttchat --channel ludwing --lines 10`
