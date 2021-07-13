@@ -136,7 +136,7 @@ ttchat --channel ludwig --lines 5
 			// Create IRC client and start
 			ircClient := client.NewGempirClient(conf.Username, channel, accessToken)
 			c := irc.NewIRCService(displayName, channel, ircClient)
-			if tea.NewProgram(terminal.NewModel(lines, c)).Start() != nil {
+			if tea.NewProgram(terminal.NewModel(lines, c), tea.WithAltScreen()).Start() != nil {
 				errExit(err)
 			}
 		},

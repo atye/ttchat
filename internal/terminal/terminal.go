@@ -102,6 +102,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
+		m.ti.Width = msg.Width
 		return m, listenForMessages(m.in)
 
 	case types.Message:
