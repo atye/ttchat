@@ -47,22 +47,22 @@ func (t token) Claims(v interface{}) error {
 }
 
 func TestGetOAuthToken(t *testing.T) {
-	conf := &oauth2.Config{
-		ClientID: clientID,
-		Scopes:   []string{"openid", "chat:read", "chat:edit"},
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  twitch.Endpoint.AuthURL,
-			TokenURL: twitch.Endpoint.TokenURL,
-		},
-		RedirectURL: fmt.Sprintf("http://localhost:%s", "9999"),
-	}
+	t.Run("success", func(t *testing.T) {
+		conf := &oauth2.Config{
+			ClientID: clientID,
+			Scopes:   []string{"openid", "chat:read", "chat:edit"},
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  twitch.Endpoint.AuthURL,
+				TokenURL: twitch.Endpoint.TokenURL,
+			},
+			RedirectURL: fmt.Sprintf("http://localhost:%s", "9999"),
+		}
 
-	want := "123"
+		want := "123"
 
-	u := Utils{
-		OpenURL: func(url string) error {
-			go func() {
-				for {
+		u := Utils{
+			OpenURL: func(url string) error {
+				go func() {
 					r, err := http.NewRequest("GET", "http://localhost:9999/callback", nil)
 					if err != nil {
 						panic(err)
@@ -77,21 +77,21 @@ func TestGetOAuthToken(t *testing.T) {
 						_, callbackErr = http.DefaultClient.Do(r)
 						time.Sleep(500 * time.Millisecond)
 					}
-				}
-			}()
-			return nil
-		},
-		NewUUID: func() (string, error) {
-			return "000", nil
-		},
-	}
+				}()
+				return nil
+			},
+			NewUUID: func() (string, error) {
+				return "000", nil
+			},
+		}
 
-	tkn, err := GetOAuthToken(conf, verifier{}, u)
-	if err != nil {
-		t.Fatal(err)
-	}
+		tkn, err := GetOAuthToken(conf, verifier{}, u)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if tkn != want {
-		t.Errorf("expected access token %s, got %s", want, tkn)
-	}
+		if tkn != want {
+			t.Errorf("expected access token %s, got %s", want, tkn)
+		}
+	})
 }

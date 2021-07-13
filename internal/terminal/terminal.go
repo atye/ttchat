@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/atye/ttchat/internal/types"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"gitub.com/atye/ttchat/internal/types"
 )
 
 type Twitch interface {

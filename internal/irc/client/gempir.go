@@ -1,4 +1,4 @@
-package twitch
+package client
 
 // Copyright © 2021 Dell Inc., or its subsidiaries. All Rights Reserved.
 //
@@ -17,9 +17,9 @@ package twitch
 import (
 	"fmt"
 
-	"github.com/atye/ttchat/internal/irc"
-	"github.com/atye/ttchat/internal/types"
 	"github.com/gempir/go-twitch-irc/v2"
+	"gitub.com/atye/ttchat/internal/irc"
+	"gitub.com/atye/ttchat/internal/types"
 )
 
 type Gempir struct {

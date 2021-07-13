@@ -12,25 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package openid
+package main
 
 import (
-	"context"
+	"fmt"
+	"os"
 
-	"github.com/atye/ttchat/internal/irc/auth"
-	"github.com/coreos/go-oidc/v3/oidc"
+	"gitub.com/atye/ttchat/internal/cmd"
 )
 
-type CoreOSVerifier struct {
-	Verifier *oidc.IDTokenVerifier
-}
-
-var _ auth.TokenVerifyier = CoreOSVerifier{}
-
-func (v CoreOSVerifier) Verify(ctx context.Context, rawToken string) (auth.IDToken, error) {
-	t, err := v.Verifier.Verify(context.Background(), rawToken)
-	if err != nil {
-		return nil, err
+func main() {
+	if err := cmd.NewRootCmd().Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
-	return t, nil
 }

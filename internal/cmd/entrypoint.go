@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cmd
 
 import (
 	"context"
@@ -24,17 +24,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/atye/ttchat/internal/irc"
-	"github.com/atye/ttchat/internal/irc/auth"
-	"github.com/atye/ttchat/internal/irc/auth/openid"
-	ttchattwitch "github.com/atye/ttchat/internal/irc/twitch"
-	"github.com/atye/ttchat/internal/terminal"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/google/uuid"
 	"github.com/nicklaw5/helix"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
+	"gitub.com/atye/ttchat/internal/auth"
+	"gitub.com/atye/ttchat/internal/auth/openid"
+	"gitub.com/atye/ttchat/internal/irc"
+	"gitub.com/atye/ttchat/internal/irc/client"
+	"gitub.com/atye/ttchat/internal/terminal"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/twitch"
 	"gopkg.in/yaml.v3"
@@ -56,13 +56,6 @@ var (
 	ErrNoUsername = errors.New("no username in configuration file")
 )
 
-func main() {
-	if err := NewRootCmd().Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
-
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "ttchat",
@@ -70,7 +63,8 @@ func NewRootCmd() *cobra.Command {
 		Long: `
 ttchat is a terminal application that connects to a twitch channel's
 chat using a small configuration file. See repo for more details.
-	
+
+ttchat -h
 ttchat --channel ludwig
 ttchat --channel ludwig --lines 5
 `,
@@ -133,7 +127,7 @@ ttchat --channel ludwig --lines 5
 			//
 
 			// Create IRC client and start
-			ircClient := ttchattwitch.NewGempirClient(conf.Username, channel, accessToken)
+			ircClient := client.NewGempirClient(conf.Username, channel, accessToken)
 			c := irc.NewIRCService(displayName, channel, ircClient)
 			if tea.NewProgram(terminal.NewModel(lines, c)).Start() != nil {
 				errExit(err)
@@ -218,7 +212,7 @@ func getAccessToken(tokenFlagValue string, conf Config, verifier auth.TokenVerif
 
 	t, err := auth.GetOAuthToken(oauthConf, verifier, u)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	return t, nil
 }

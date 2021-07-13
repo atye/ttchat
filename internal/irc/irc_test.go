@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/atye/ttchat/internal/types"
 	"github.com/charmbracelet/lipgloss"
+	"gitub.com/atye/ttchat/internal/types"
 )
 
 // build a Private Message
