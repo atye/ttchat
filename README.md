@@ -6,7 +6,7 @@ Connect to a Twitch channel's chat from your terminal
 
   ### With Go
 
-```go get github.com/atye/ttchat/cmd```
+```go get github.com/atye/ttchat```
 
 ### Clone and build
 ```git clone https://github.com/atye/ttchat.git```
@@ -17,7 +17,7 @@ You should see the binary at `./bin/ttchat`.
 
 # Configuration and Setup
 
- `ttchat` requires a configuration file in `$HOME/.ttchat/config.yaml` containing some account information for authentication.
+ A configuration file at `$HOME/.ttchat/config.yaml` containing some account information is required for authentication.
 
 ```
 clientID: "your_twitch_client_id"
@@ -29,18 +29,17 @@ redirectPort: "9999"
 
 `username` is your username for logging in.
 
-`redirectPort` is the port that `ttchat` will use to spin up a temporary, localhost server used in the authentication process. If `redirectPort` is empty, port 9999 is used. **Make sure to keep reading.**
+`redirectPort` is the port that `ttchat` will use to spin up a temporary, localhost server used in the authentication process. If `redirectPort` is empty, port 9999 is used.
 
-Your Twitch application's OAuth Redirect URLs must have a match for the URL of the local server that `ttchat` spins up. If this was your configuration:
+Your Twitch application's list OAuth Redirect URLs must have a match for the URL of `ttchat`. If this was your configuration:
 
 ```
-clientID: "your_twitch_client_id"
-username: "your_twitch_login_username"
+clientID: "123"
+username: "foo"
 redirectPort: "8080"
 ```
-`ttchat` will listen on `http://localhost:8080` for Twitch's authentication result. So, your Twitch application must have `http://localhost:8080` for a redirect URL.
 
-If your `redirectPort` is `9000`, `ttchat` will listen on `http://localhost:9000` so your Twitch application must have `http://localhost:9000` for a redirect URL.
+`ttchat` will listen on `http://localhost:8080` for Twitch's authentication result. So, your Twitch application must have `http://localhost:8080` for a redirect URL.
 
 # Running
 `ttchat -h`
