@@ -71,7 +71,7 @@ func TestGetMessageSource(t *testing.T) {
 				Text: "hi @user",
 			},
 			lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(DefaultNameColor)).Render("foo"),
-			fmt.Sprintf("hi %s", lipgloss.NewStyle().Background(lipgloss.Color(UserHighlightColor)).Render("@user")),
+			fmt.Sprintf("hi %s", UserHighLightStyle.Render("@user")),
 		},
 		{
 			"incoming is you",
@@ -118,7 +118,7 @@ func TestPublish(t *testing.T) {
 			"publish message",
 			"user",
 			"testText",
-			lipgloss.NewStyle().Background(lipgloss.Color(UserHighlightColor)).Render("user"),
+			UserHighLightStyle.Render("user"),
 			"testText",
 		},
 	}

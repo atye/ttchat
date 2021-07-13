@@ -79,7 +79,7 @@ func (c IRCService) Publish(msg string) {
 
 	styled := highlightUserMentions(msg, c.displayName)
 	c.upstream <- types.PrivateMessage{
-		Name: lipgloss.NewStyle().Background(lipgloss.Color(UserHighlightColor)).Render(c.displayName),
+		Name: UserHighLightStyle.Render(c.displayName),
 		Text: styled,
 	}
 }
@@ -88,7 +88,7 @@ func highlightUserMentions(text string, displayName string) string {
 	texts := strings.Split(text, " ")
 	for i, w := range texts {
 		if strings.Contains(w, fmt.Sprintf("@%s", displayName)) {
-			texts[i] = lipgloss.NewStyle().Background(lipgloss.Color(UserHighlightColor)).Render(w)
+			texts[i] = UserHighLightStyle.Render(w)
 		}
 	}
 	return strings.Join(texts, " ")
