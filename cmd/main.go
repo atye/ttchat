@@ -24,17 +24,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/atye/ttchat/internal/irc"
-	"github.com/atye/ttchat/internal/irc/auth"
-	"github.com/atye/ttchat/internal/irc/auth/openid"
-	ttchattwitch "github.com/atye/ttchat/internal/irc/twitch"
-	"github.com/atye/ttchat/internal/terminal"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/google/uuid"
 	"github.com/nicklaw5/helix"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
+	"gitub.com/atye/ttchat/internal/auth"
+	"gitub.com/atye/ttchat/internal/auth/openid"
+	"gitub.com/atye/ttchat/internal/irc"
+	"gitub.com/atye/ttchat/internal/irc/client"
+	"gitub.com/atye/ttchat/internal/terminal"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/twitch"
 	"gopkg.in/yaml.v3"
@@ -133,7 +133,7 @@ ttchat --channel ludwig --lines 5
 			//
 
 			// Create IRC client and start
-			ircClient := ttchattwitch.NewGempirClient(conf.Username, channel, accessToken)
+			ircClient := client.NewGempirClient(conf.Username, channel, accessToken)
 			c := irc.NewIRCService(displayName, channel, ircClient)
 			if tea.NewProgram(terminal.NewModel(lines, c)).Start() != nil {
 				errExit(err)
