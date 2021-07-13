@@ -4,7 +4,11 @@ Connect to a Twitch channel's chat from your terminal
 
 # Installing
 
-  ### With Go
+### Download release
+
+See https://github.com/atye/ttchat/releases.
+
+### With Go
 
 ```go get github.com/atye/ttchat```
 
