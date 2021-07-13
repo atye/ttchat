@@ -75,16 +75,22 @@ func GetOAuthToken(conf *oauth2.Config, verifier TokenVerifyier, util Utils) (st
 		verifier: verifier,
 	}
 
+	errCh := make(chan error)
+	tokenCh := make(chan string)
+
+	go listenForRedirect(opts, errCh, tokenCh)
+
 	err = util.OpenURL(addr)
 	if err != nil {
 		return "", err
 	}
 
-	token, err := listenForRedirect(opts)
-	if err != nil {
+	select {
+	case t := <-tokenCh:
+		return t, nil
+	case err := <-errCh:
 		return "", err
 	}
-	return token, nil
 }
 
 func buildUserLoginURL(conf *oauth2.Config, state string, nonce string) (string, error) {
@@ -111,14 +117,14 @@ type port struct {
 	Port string
 }
 
-func listenForRedirect(opts redirectOpts) (accessToken string, err error) {
+func listenForRedirect(opts redirectOpts, errCh chan error, tokenCh chan string) {
 	svr := &http.Server{Addr: fmt.Sprintf(":%s", opts.port.Port)}
 	svr.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/":
-			err = opts.t.Execute(w, opts.port)
+			err := opts.t.Execute(w, opts.port)
 			if err != nil {
-				err = fmt.Errorf("failed to execute template: %v", err)
+				errCh <- fmt.Errorf("failed to execute template: %v", err)
 				return
 			}
 		case "/callback":
@@ -132,19 +138,19 @@ func listenForRedirect(opts redirectOpts) (accessToken string, err error) {
 			var idToken IDToken
 
 			if s := getValue(data, "state"); s != opts.state {
-				err = errFailedStateValidation
+				errCh <- errFailedStateValidation
 				return
 			}
 
 			tkn := getValue(data, "id_token")
 			if tkn == "" {
-				err = errNoIdToken
+				errCh <- errNoIdToken
 				return
 			}
 
-			idToken, err = opts.verifier.Verify(context.Background(), tkn)
+			idToken, err := opts.verifier.Verify(context.Background(), tkn)
 			if err != nil {
-				err = fmt.Errorf("failed to verify access token: %v", err)
+				errCh <- fmt.Errorf("failed to verify access token: %v", err)
 				return
 			}
 
@@ -154,29 +160,28 @@ func listenForRedirect(opts redirectOpts) (accessToken string, err error) {
 
 			err = idToken.Claims(&claims)
 			if err != nil {
-				err = fmt.Errorf("failed to decode id_token claims: %v", err)
+				errCh <- fmt.Errorf("failed to decode id_token claims: %v", err)
 				return
 			}
 
 			if claims.Nonce != opts.nonce {
-				err = errFailedNonceValidation
+				errCh <- errFailedNonceValidation
 				return
 			}
 
-			at := getValue(data, "access_token")
-			if at == "" {
-				err = errNoAccessToken
+			accessToken := getValue(data, "access_token")
+			if accessToken == "" {
+				errCh <- errNoAccessToken
 				return
 			}
 
-			accessToken = at
+			tokenCh <- accessToken
 		}
 	})
 
 	if svrErr := svr.ListenAndServe(); svrErr != http.ErrServerClosed {
-		return "", err
+		errCh <- svrErr
 	}
-	return
 }
 
 func getValue(pairs []string, key string) string {
