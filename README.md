@@ -44,5 +44,7 @@ If your `redirectPort` is `9000`, `ttchat` will listen on `http://localhost:9000
 
 # Running
 `ttchat -h`
+
 `ttchat --channel ludwig`
+
 `ttchat --channel ludwing --lines 10`
