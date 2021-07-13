@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -51,9 +52,10 @@ const (
 )
 
 var (
-	ErrNoChannel  = errors.New("no channel provided")
-	ErrNoClientID = errors.New("no clientID in configuration file")
-	ErrNoUsername = errors.New("no username in configuration file")
+	ErrNoChannel          = errors.New("no channel provided")
+	ErrNoClientID         = errors.New("no clientID in configuration file")
+	ErrNoUsername         = errors.New("no username in configuration file")
+	ErrInvalidAccessToken = errors.New("invalid access token")
 )
 
 func NewRootCmd() *cobra.Command {
@@ -107,6 +109,11 @@ ttchat --channel ludwig --lines 5
 			oidcVerifier := openid.CoreOSVerifier{Verifier: provider.Verifier(&oidc.Config{ClientID: conf.ClientID})}
 
 			accessToken, err := getAccessToken(token, conf, oidcVerifier)
+			if err != nil {
+				errExit(err)
+			}
+
+			err = validateAccessToken(accessToken)
 			if err != nil {
 				errExit(err)
 			}
@@ -215,6 +222,30 @@ func getAccessToken(tokenFlagValue string, conf Config, verifier auth.TokenVerif
 		return "", err
 	}
 	return t, nil
+}
+
+func validateAccessToken(accessToken string) error {
+	r, err := http.NewRequest("GET", "https://id.twitch.tv/oauth2/validate", nil)
+	if err != nil {
+		return err
+	}
+
+	r.Header.Set("Authorization", fmt.Sprintf("OAuth %s", accessToken))
+	resp, err := http.DefaultClient.Do(r)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return ErrInvalidAccessToken
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("invaild access token: status code: %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 type twitchAPI interface {

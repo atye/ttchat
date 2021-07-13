@@ -46,13 +46,18 @@ var (
 	errNoAccessToken         = errors.New("access_token not found")
 )
 
-func GetOAuthToken(conf *oauth2.Config, verifier TokenVerifyier, u Utils) (string, error) {
-	state, err := u.NewUUID()
+func GetOAuthToken(conf *oauth2.Config, verifier TokenVerifyier, util Utils) (string, error) {
+	state, err := util.NewUUID()
 	if err != nil {
 		return "", err
 	}
 
-	nonce, err := u.NewUUID()
+	nonce, err := util.NewUUID()
+	if err != nil {
+		return "", err
+	}
+
+	u, err := url.Parse(conf.RedirectURL)
 	if err != nil {
 		return "", err
 	}
@@ -62,12 +67,20 @@ func GetOAuthToken(conf *oauth2.Config, verifier TokenVerifyier, u Utils) (strin
 		return "", err
 	}
 
-	err = u.OpenURL(addr)
+	opts := redirectOpts{
+		state:    state,
+		nonce:    nonce,
+		port:     port{Port: u.Port()},
+		t:        template.Must(template.New("example").Parse(html)),
+		verifier: verifier,
+	}
+
+	err = util.OpenURL(addr)
 	if err != nil {
 		return "", err
 	}
 
-	token, err := listenForToken(state, nonce, conf, verifier)
+	token, err := listenForRedirect(opts)
 	if err != nil {
 		return "", err
 	}
@@ -86,24 +99,24 @@ func buildUserLoginURL(conf *oauth2.Config, state string, nonce string) (string,
 	return strings.Replace(authURL.String(), "response_type=code", "response_type=token+id_token", 1), nil
 }
 
-func listenForToken(state string, nonce string, conf *oauth2.Config, verifier TokenVerifyier) (accessToken string, err error) {
-	u, err := url.Parse(conf.RedirectURL)
-	if err != nil {
-		return "", err
-	}
+type redirectOpts struct {
+	state    string
+	nonce    string
+	port     port
+	t        *template.Template
+	verifier TokenVerifyier
+}
 
-	var port struct {
-		Port string
-	}
-	port.Port = u.Port()
+type port struct {
+	Port string
+}
 
-	t := template.Must(template.New("example").Parse(html))
-
-	svr := &http.Server{Addr: fmt.Sprintf(":%s", u.Port())}
+func listenForRedirect(opts redirectOpts) (accessToken string, err error) {
+	svr := &http.Server{Addr: fmt.Sprintf(":%s", opts.port.Port)}
 	svr.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/":
-			err = t.Execute(w, &port)
+			err = opts.t.Execute(w, opts.port)
 			if err != nil {
 				err = fmt.Errorf("failed to execute template: %v", err)
 				return
@@ -118,7 +131,7 @@ func listenForToken(state string, nonce string, conf *oauth2.Config, verifier To
 			data := strings.Split(r.URL.Query().Get("data"), "&")
 			var idToken IDToken
 
-			if s := getValue(data, "state"); s != state {
+			if s := getValue(data, "state"); s != opts.state {
 				err = errFailedStateValidation
 				return
 			}
@@ -129,7 +142,7 @@ func listenForToken(state string, nonce string, conf *oauth2.Config, verifier To
 				return
 			}
 
-			idToken, err = verifier.Verify(context.Background(), tkn)
+			idToken, err = opts.verifier.Verify(context.Background(), tkn)
 			if err != nil {
 				err = fmt.Errorf("failed to verify access token: %v", err)
 				return
@@ -145,7 +158,7 @@ func listenForToken(state string, nonce string, conf *oauth2.Config, verifier To
 				return
 			}
 
-			if claims.Nonce != nonce {
+			if claims.Nonce != opts.nonce {
 				err = errFailedNonceValidation
 				return
 			}
