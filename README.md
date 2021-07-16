@@ -49,5 +49,3 @@ redirectPort: "8080"
 `ttchat -h`
 
 `ttchat --channel ludwig`
-
-`ttchat --channel ludwing --lines 10`
