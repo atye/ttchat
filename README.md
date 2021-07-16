@@ -51,5 +51,6 @@ See `ttchat -h` for options and arguments
 `ttchat --channel ludwig`
 
 Obtaining an access token requires you to login via your default browswer. To provide your own token, use the `--token` flag.
+See https://dev.twitch.tv/docs/authentication/getting-tokens-oauth for more details on obtaining your own access token.
 
 `ttchat -c ludwing --token $TOKEN`
