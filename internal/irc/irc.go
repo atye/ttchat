@@ -87,7 +87,7 @@ func (c IRCService) Publish(msg string) {
 func highlightUserMentions(text string, displayName string) string {
 	texts := strings.Split(text, " ")
 	for i, w := range texts {
-		if strings.Contains(w, fmt.Sprintf("@%s", displayName)) {
+		if strings.Contains(strings.ToLower(w), fmt.Sprintf("@%s", strings.ToLower(displayName))) {
 			texts[i] = UserHighLightStyle.Render(w)
 		}
 	}
