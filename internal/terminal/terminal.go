@@ -61,19 +61,13 @@ func (m noOpMessage) FromMyself() bool {
 	return false
 }
 
-func NewModel(height int, t Twitch) Model {
+func NewModel(t Twitch) Model {
 	ti := textinput.NewModel()
 	ti.Placeholder = "Send a message"
 	ti.Focus()
 
-	/*var m []types.Message
-	for i := 0; i < height; i++ {
-		m = append(m, types.Message(noOpMessage{}))
-	}*/
-
 	return Model{
-		in: t.GetMessageSource(),
-		//messages: m,
+		in:   t.GetMessageSource(),
 		mode: Initialize,
 		ti:   ti,
 		t:    t,
