@@ -33,7 +33,15 @@ type Model struct {
 	messages []types.Message
 	ti       textinput.Model
 	t        Twitch
+	mode     mode
 }
+
+type mode int
+
+const (
+	Initialize mode = iota
+	Run
+)
 
 type noOpMessage struct{}
 
@@ -58,16 +66,17 @@ func NewModel(height int, t Twitch) Model {
 	ti.Placeholder = "Send a message"
 	ti.Focus()
 
-	var m []types.Message
+	/*var m []types.Message
 	for i := 0; i < height; i++ {
 		m = append(m, types.Message(noOpMessage{}))
-	}
+	}*/
 
 	return Model{
-		in:       t.GetMessageSource(),
-		messages: m,
-		ti:       ti,
-		t:        t,
+		in: t.GetMessageSource(),
+		//messages: m,
+		mode: Initialize,
+		ti:   ti,
+		t:    t,
 	}
 }
 
@@ -102,7 +111,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		m.ti.Width = msg.Width
+		switch m.mode {
+		case Initialize:
+			msgs := make([]types.Message, msg.Height/2)
+			for i := 0; i < msg.Height/2; i++ {
+				msgs[i] = types.Message(noOpMessage{})
+			}
+			m.messages = msgs
+			m.mode = Run
+		default:
+		}
 		return m, listenForMessages(m.in)
 
 	case types.Message:
