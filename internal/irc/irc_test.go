@@ -74,6 +74,16 @@ func TestGetMessageSource(t *testing.T) {
 			fmt.Sprintf("hi %s", UserHighLightStyle.Render("@user")),
 		},
 		{
+			"incoming mention mix case",
+			"User",
+			types.PrivateMessage{
+				Name: "foo",
+				Text: "hi @user",
+			},
+			lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(DefaultNameColor)).Render("foo"),
+			fmt.Sprintf("hi %s", UserHighLightStyle.Render("@user")),
+		},
+		{
 			"incoming is you",
 			"user",
 			types.PrivateMessage{
