@@ -68,7 +68,7 @@ chat using a small configuration file. See repo for more details.
 
 ttchat -h
 ttchat --channel ludwig
-ttchat --channel ludwig --lines 5
+ttchat -c ludwing --token $ACCESS_TOKEN
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			rand.Seed(time.Now().UTC().UnixNano())
