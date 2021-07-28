@@ -17,8 +17,8 @@ package openid
 import (
 	"context"
 
+	"github.com/atye/ttchat/internal/auth"
 	"github.com/coreos/go-oidc/v3/oidc"
-	"gitub.com/atye/ttchat/internal/auth"
 )
 
 type CoreOSVerifier struct {

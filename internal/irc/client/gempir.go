@@ -17,9 +17,9 @@ package client
 import (
 	"fmt"
 
+	"github.com/atye/ttchat/internal/irc"
+	"github.com/atye/ttchat/internal/types"
 	"github.com/gempir/go-twitch-irc/v2"
-	"gitub.com/atye/ttchat/internal/irc"
-	"gitub.com/atye/ttchat/internal/types"
 )
 
 type Gempir struct {
