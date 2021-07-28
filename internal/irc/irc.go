@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/atye/ttchat/internal/terminal"
+	"github.com/atye/ttchat/internal/types"
 	"github.com/charmbracelet/lipgloss"
-	"gitub.com/atye/ttchat/internal/terminal"
-	"gitub.com/atye/ttchat/internal/types"
 )
 
 type IRC interface {

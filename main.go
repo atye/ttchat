@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"gitub.com/atye/ttchat/internal/cmd"
+	"github.com/atye/ttchat/internal/cmd"
 )
 
 func main() {

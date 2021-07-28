@@ -1,4 +1,4 @@
-module gitub.com/atye/ttchat
+module github.com/atye/ttchat
 
 go 1.16
 
