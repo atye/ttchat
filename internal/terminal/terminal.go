@@ -2,6 +2,7 @@ package terminal
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/atye/ttchat/internal/types"
@@ -15,11 +16,13 @@ type Twitch interface {
 }
 
 type Model struct {
-	in       <-chan types.Message
-	messages []types.Message
-	ti       textinput.Model
-	t        Twitch
-	mode     mode
+	in          <-chan types.Message
+	messages    []types.Message
+	ti          textinput.Model
+	t           Twitch
+	mode        mode
+	height      int
+	lineSpacing int
 }
 
 type mode int
@@ -47,16 +50,17 @@ func (m noOpMessage) FromMyself() bool {
 	return false
 }
 
-func NewModel(t Twitch) Model {
+func NewModel(t Twitch, lineSpacing int) Model {
 	ti := textinput.NewModel()
 	ti.Placeholder = "Send a message"
 	ti.Focus()
 
 	return Model{
-		in:   t.GetMessageSource(),
-		mode: Initialize,
-		ti:   ti,
-		t:    t,
+		in:          t.GetMessageSource(),
+		mode:        Initialize,
+		ti:          ti,
+		t:           t,
+		lineSpacing: lineSpacing,
 	}
 }
 
@@ -93,13 +97,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		switch m.mode {
 		case Initialize:
-			msgs := make([]types.Message, msg.Height/2)
-			for i := 0; i < msg.Height/2; i++ {
+			numMessages := (msg.Height - 2) / (m.lineSpacing + 1)
+			msgs := make([]types.Message, numMessages)
+			for i := 0; i < numMessages; i++ {
 				msgs[i] = types.Message(noOpMessage{})
 			}
+
+			m.height = msg.Height
 			m.messages = msgs
 			m.mode = Run
-		default:
 		}
 		return m, listenForMessages(m.in)
 
@@ -114,14 +120,38 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	var b strings.Builder
-	for _, msg := range m.messages {
-		if msg.GetName() == "" || msg.GetText() == "" {
-			b.WriteString("\n\n")
-			continue
+
+	totalLines := len(m.messages)*(m.lineSpacing+1) + 2
+	log.Printf("lines: %v, height: %v", totalLines, m.height)
+	if totalLines < m.height {
+		for i := totalLines; i <= m.height; i++ {
+			b.WriteString("\n")
 		}
-		fmt.Fprintf(&b, "%s: %s\n\n", msg.GetName(), msg.GetText())
 	}
 
+	for i := 0; i < len(m.messages); i++ {
+		msg := m.messages[i]
+		if msg.GetName() == "" || msg.GetText() == "" {
+			b.WriteString("\n")
+
+			if i != len(m.messages)-1 {
+				for i := 0; i < m.lineSpacing; i++ {
+					b.WriteString("\n")
+				}
+			}
+			continue
+		}
+
+		b.WriteString(fmt.Sprintf("%s: %s\n", msg.GetName(), msg.GetText()))
+
+		if i != len(m.messages)-1 {
+			for i := 0; i < m.lineSpacing; i++ {
+				b.WriteString("\n")
+			}
+		}
+	}
+
+	b.WriteString("\n")
 	_, err := b.WriteString(m.ti.View())
 	if err != nil {
 		return ""

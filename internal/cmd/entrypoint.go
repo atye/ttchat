@@ -32,6 +32,7 @@ type Config struct {
 	ClientID     string `yaml:"clientID"`
 	Username     string `yaml:"username"`
 	RedirectPort string `yaml:"redirectPort"`
+	LineSpacing  int    `yaml:"lineSpacing"`
 }
 
 const (
@@ -118,7 +119,8 @@ ttchat -c ludwing --token $ACCESS_TOKEN
 			// Create IRC client and start
 			ircClient := client.NewGempirClient(conf.Username, channel, accessToken)
 			c := irc.NewIRCService(displayName, channel, ircClient)
-			if tea.NewProgram(terminal.NewModel(c), tea.WithAltScreen()).Start() != nil {
+
+			if tea.NewProgram(terminal.NewModel(c, conf.LineSpacing), tea.WithAltScreen()).Start() != nil {
 				errExit(err)
 			}
 		},
@@ -157,6 +159,7 @@ func getConfig(hd string) (Config, error) {
 	if conf.RedirectPort == "" {
 		conf.RedirectPort = DefaultRedirectPort
 	}
+
 	return conf, nil
 }
 
