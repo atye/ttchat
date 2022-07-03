@@ -2,12 +2,12 @@ package terminal
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/atye/ttchat/internal/types"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/muesli/reflow/wordwrap"
 )
 
 type Twitch interface {
@@ -17,11 +17,12 @@ type Twitch interface {
 
 type Model struct {
 	in          <-chan types.Message
-	messages    []types.Message
+	lines       []string
 	ti          textinput.Model
 	t           Twitch
 	mode        mode
 	height      int
+	width       int
 	lineSpacing int
 }
 
@@ -31,24 +32,6 @@ const (
 	Initialize mode = iota
 	Run
 )
-
-type noOpMessage struct{}
-
-func (m noOpMessage) GetName() string {
-	return ""
-}
-
-func (m noOpMessage) GetText() string {
-	return ""
-}
-
-func (m noOpMessage) GetColor() string {
-	return ""
-}
-
-func (m noOpMessage) FromMyself() bool {
-	return false
-}
 
 func NewModel(t Twitch, lineSpacing int) Model {
 	ti := textinput.NewModel()
@@ -97,20 +80,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		switch m.mode {
 		case Initialize:
-			numMessages := (msg.Height - 2) / (m.lineSpacing + 1)
-			msgs := make([]types.Message, numMessages)
-			for i := 0; i < numMessages; i++ {
-				msgs[i] = types.Message(noOpMessage{})
+			m.lines = make([]string, msg.Height-2)
+			for i := 0; i < len(m.lines); i++ {
+				m.lines[i] = "\n"
 			}
-
 			m.height = msg.Height
-			m.messages = msgs
+			m.width = msg.Width
 			m.mode = Run
 		}
 		return m, listenForMessages(m.in)
 
 	case types.Message:
-		m.messages = append(m.messages[1:], msg)
+		wrappedMsg := wordwrap.String(fmt.Sprintf("%s: %s", msg.GetName(), msg.GetText()), m.width)
+		msgLines := strings.Split(wrappedMsg, "\n")
+		msgLines[len(msgLines)-1] = fmt.Sprintf("%s\n", msgLines[len(msgLines)-1])
+
+		m.lines = append(m.lines[len(msgLines):], msgLines...)
+		for i := 0; i < m.lineSpacing; i++ {
+			m.lines = append(m.lines[1:], "\n")
+		}
 		return m, listenForMessages(m.in)
 
 	default:
@@ -120,42 +108,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	var b strings.Builder
-
-	totalLines := len(m.messages)*(m.lineSpacing+1) + 2
-	log.Printf("lines: %v, height: %v", totalLines, m.height)
-	if totalLines < m.height {
-		for i := totalLines; i <= m.height; i++ {
-			b.WriteString("\n")
-		}
-	}
-
-	for i := 0; i < len(m.messages); i++ {
-		msg := m.messages[i]
-		if msg.GetName() == "" || msg.GetText() == "" {
-			b.WriteString("\n")
-
-			if i != len(m.messages)-1 {
-				for i := 0; i < m.lineSpacing; i++ {
-					b.WriteString("\n")
-				}
-			}
-			continue
-		}
-
-		b.WriteString(fmt.Sprintf("%s: %s\n", msg.GetName(), msg.GetText()))
-
-		if i != len(m.messages)-1 {
-			for i := 0; i < m.lineSpacing; i++ {
-				b.WriteString("\n")
-			}
-		}
+	for _, line := range m.lines {
+		b.WriteString(line)
 	}
 
 	b.WriteString("\n")
-	_, err := b.WriteString(m.ti.View())
-	if err != nil {
-		return ""
-	}
+	b.WriteString(m.ti.View())
 	return b.String()
 }
 

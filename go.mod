@@ -9,6 +9,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.0.0
 	github.com/gempir/go-twitch-irc/v2 v2.5.0
 	github.com/google/uuid v1.3.0
+	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/nicklaw5/helix v1.24.0
 	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2
 	github.com/spf13/cobra v1.2.1
