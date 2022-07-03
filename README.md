@@ -36,7 +36,7 @@ lineSpacing: 1
 
 `redirectPort` is the port that `ttchat` will use to spin up a temporary, localhost server used in the authentication process if you don't provide your own access token (see [Running](#running)). If `redirectPort` is empty, port 9999 is used.
 
-`lineSpacing`: is the number of empty lines to put between messages. If `lineSpacing` is empty, there will be 0 line spaces between messages.
+`lineSpacing` is the number of empty lines to put between messages. If `lineSpacing` is empty, there will be 0 line spaces between messages.
 
 Your Twitch application's list of OAuth Redirect URLs must have a match for the URL of `ttchat`. If this was your configuration:
 
