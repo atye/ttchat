@@ -21,7 +21,6 @@ type Model struct {
 	ti          textinput.Model
 	t           Twitch
 	mode        mode
-	height      int
 	width       int
 	lineSpacing int
 }
@@ -84,7 +83,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			for i := 0; i < len(m.lines); i++ {
 				m.lines[i] = "\n"
 			}
-			m.height = msg.Height
 			m.width = msg.Width
 			m.mode = Run
 		}
