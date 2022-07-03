@@ -91,15 +91,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, listenForMessages(m.in)
 
 	case types.Message:
+		for i := 0; i < m.lineSpacing; i++ {
+			m.lines = append(m.lines[1:], "\n")
+		}
+
 		msgLines := strings.Split(wordwrap.String(fmt.Sprintf("%s: %s", msg.GetName(), msg.GetText()), m.width), "\n")
 		for i := 0; i < len(msgLines); i++ {
 			msgLines[i] = fmt.Sprintf("%s\n", msgLines[i])
 		}
 		m.lines = append(m.lines[len(msgLines):], msgLines...)
 
-		for i := 0; i < m.lineSpacing; i++ {
-			m.lines = append(m.lines[1:], "\n")
-		}
 		return m, listenForMessages(m.in)
 
 	default:
@@ -109,13 +110,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	var b strings.Builder
-	for i := 0; i < m.lineSpacing; i++ {
-		b.WriteString("\n")
-	}
-	for i, line := range m.lines {
-		if i >= len(m.lines)-m.lineSpacing {
-			continue
-		}
+	for _, line := range m.lines {
 		b.WriteString(line)
 	}
 
