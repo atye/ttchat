@@ -27,6 +27,7 @@ You should see the binary at `./bin/ttchat`.
 clientID: "your_twitch_client_id"
 username: "your_twitch_login_username"
 redirectPort: "9999"
+lineSpacing: 1
 ```
 
 `clientID` is your Client ID listed on your application on https://dev.twitch.tv/console.
@@ -34,6 +35,8 @@ redirectPort: "9999"
 `username` is your username for logging in.
 
 `redirectPort` is the port that `ttchat` will use to spin up a temporary, localhost server used in the authentication process if you don't provide your own access token (see [Running](#running)). If `redirectPort` is empty, port 9999 is used.
+
+`lineSpacing`: is the number of empty lines to put between messages. If `lineSpacing` is empty, there will be 0 line spaces between messages.
 
 Your Twitch application's list of OAuth Redirect URLs must have a match for the URL of `ttchat`. If this was your configuration:
 
