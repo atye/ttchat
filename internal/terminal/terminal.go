@@ -85,6 +85,36 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.width = msg.Width
 			m.mode = Run
+		case Run:
+			newLines := make([]string, msg.Height-2)
+			newLinesIndex := len(newLines) - 1
+
+			for i := 0; i < len(newLines); i++ {
+				newLines[i] = "\n"
+			}
+
+		out:
+			for i := len(m.lines) - 1; i >= 0; i-- {
+				if newLinesIndex < 0 {
+					break
+				}
+
+				msgLines := strings.Split(wordwrap.String(strings.Replace(m.lines[i], "\n", "", -1), msg.Width), "\n")
+				if len(msgLines) == 1 {
+					newLines[newLinesIndex] = fmt.Sprintf("%s\n", msgLines[0])
+					newLinesIndex--
+				} else {
+					for j := len(msgLines) - 1; j >= 0; j-- {
+						if newLinesIndex < 0 {
+							break out
+						}
+						newLines[newLinesIndex] = fmt.Sprintf("%s\n", msgLines[j])
+						newLinesIndex--
+					}
+				}
+			}
+			m.lines = newLines
+			m.width = msg.Width
 		}
 		return m, listenForMessages(m.in)
 
