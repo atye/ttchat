@@ -62,11 +62,9 @@ func (c IRCService) GetMessageSource() <-chan types.Message {
 
 func (c IRCService) Publish(msg string) {
 	c.irc.Say(c.channel, msg)
-
-	styled := highlightUserMentions(msg, c.displayName)
 	c.upstream <- types.PrivateMessage{
 		Name: UserHighLightStyle.Render(c.displayName),
-		Text: styled,
+		Text: highlightUserMentions(msg, c.displayName),
 	}
 }
 
