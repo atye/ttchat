@@ -101,30 +101,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		out:
 			for linesIndex >= 0 {
-				//log.Printf("linesIndex: %d", linesIndex)
 				if newLinesIndex < 0 {
 					break
 				}
 
 				author := m.lines[linesIndex].author
-
-				// if line has author, rebuild entire message
-				//var b strings.Builder
 				var buf []string
 				if author != "" {
 					for j := linesIndex; j >= 0; j-- {
 						if m.lines[j].author == author {
-							//b.WriteString(strings.Replace(m.lines[j].value, "\n", "", -1))
 							buf = append([]string{strings.Replace(m.lines[j].value, "\n", "", -1)}, buf...)
-							//linesIndex--
-							//log.Printf("linesIndex: %d", linesIndex)
+							linesIndex--
 						} else {
 							break
 						}
 					}
 				} else {
-					//b.WriteString(strings.Replace(m.lines[i].value, "\n", "", -1))
 					buf = []string{strings.Replace(m.lines[linesIndex].value, "\n", "", -1)}
+					linesIndex--
 				}
 
 				msgLines := strings.Split(wordwrap.String(strings.Join(buf, " "), msg.Width), "\n")
@@ -133,7 +127,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					newLinesIndex--
 				} else {
 					for j := len(msgLines) - 1; j >= 0; j-- {
-						//log.Printf("newLinesIndex: %d", newLinesIndex)
 						if newLinesIndex < 0 {
 							break out
 						}
@@ -141,7 +134,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						newLinesIndex--
 					}
 				}
-				linesIndex--
 			}
 			m.lines = newLines
 			m.width = msg.Width
@@ -158,7 +150,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		newLines := make([]line, len(msgLines))
 		for i := 0; i < len(msgLines); i++ {
 			newLines[i] = line{author: msg.GetName(), value: fmt.Sprintf("%s\n", msgLines[i])}
-			//msgLines[i] = fmt.Sprintf("%s\n", msgLines[i])
 		}
 		m.lines = append(m.lines[len(newLines):], newLines...)
 
