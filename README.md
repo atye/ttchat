@@ -8,10 +8,6 @@ Connect to a Twitch channel's chat from your terminal
 
 See https://github.com/atye/ttchat/releases.
 
-### With Go
-
-```go get github.com/atye/ttchat```
-
 ### Clone and build
 ```git clone https://github.com/atye/ttchat.git```
 
