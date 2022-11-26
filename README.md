@@ -48,12 +48,12 @@ redirectPort: "8080"
 
 # Running
 
-`ttchat --channel GothamChess`
-`ttchat --channel GothamChess --channel chessbrah`
+`ttchat --channel sodapoppin`
+`ttchat --channel sodapoppin --channel hasanabi`
 
 Obtaining an OAuth access token requires your authorization via web browser. See https://dev.twitch.tv/docs/authentication/getting-tokens-oauth for more details. To provide your own token, use the `--token` flag.
 
-`ttchat --channel GothamChess --token $TOKEN`
+`ttchat --channel sodapoppin --token $TOKEN`
 
 ## Notes
 - The token must have the `chat:edit` and `chat:read` scopes
