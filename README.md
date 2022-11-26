@@ -1,6 +1,8 @@
 # ttchat
 
-Connect to a Twitch channel's chat from your terminal
+Connect to a Twitch channel's chat from your terminal.
+
+![](demo.gif)
 
 # Installing
 
@@ -20,8 +22,8 @@ You should see the binary at `./bin/ttchat`.
  A configuration file at `$HOME/.ttchat/config.yaml` containing some account information is required for authentication.
 
 ```
-clientID: "your_twitch_client_id"
-username: "your_twitch_login_username"
+clientID: "yourTwitchClientId"
+username: "yourTwitchUsername"
 redirectPort: "9999"
 lineSpacing: 1
 ```
@@ -45,14 +47,13 @@ redirectPort: "8080"
 `ttchat` would listen on `http://localhost:8080` for Twitch's authentication result. So, your Twitch application must have `http://localhost:8080` for a redirect URL.
 
 # Running
-See `ttchat -h` for options and arguments
 
-`ttchat --channel ludwig`
+`ttchat --channel GothamChess`
+`ttchat --channel GothamChess --channel chessbrah`
 
-Obtaining an access token requires you to login via your default browswer. To provide your own token, use the `--token` flag.
-See https://dev.twitch.tv/docs/authentication/getting-tokens-oauth for more details on obtaining your own access token.
+Obtaining an OAuth access token requires your authorization via web browser. See https://dev.twitch.tv/docs/authentication/getting-tokens-oauth for more details. To provide your own token, use the `--token` flag.
 
-`ttchat --channel ludwing --token $ACCESS_TOKEN`
+`ttchat --channel GothamChess --token $TOKEN`
 
 ## Notes
-The token must have the `chat:edit` and `chat:read` scopes
+- The token must have the `chat:edit` and `chat:read` scopes

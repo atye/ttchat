@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -55,14 +56,13 @@ ttchat is a terminal application that connects to a twitch channel's
 chat using a small configuration file. See repo for more details.
 
 ttchat -h
-ttchat --channel ludwig
-ttchat -c ludwing --token $ACCESS_TOKEN
+ttchat --channel GothamChess --channel chessbrah
+ttchat --channel GothamChess --token $TOKEN
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			rand.Seed(time.Now().UTC().UnixNano())
 
-			f, _ := os.Create("out.txt")
-			logger := log.New(f, "", log.LstdFlags)
+			logger := log.New(io.Discard, "", log.LstdFlags)
 
 			channels, err := cmd.Flags().GetStringSlice("channel")
 			if err != nil {
