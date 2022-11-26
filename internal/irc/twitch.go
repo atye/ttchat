@@ -2,6 +2,7 @@ package irc
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/atye/ttchat/internal/terminal"
@@ -9,16 +10,18 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// Generic interface for doing something with an IRC connection
 type IRC interface {
-	OnPrivateMessage(func(types.PrivateMessage))
-	Say(string, string) // channel, message
+	OnPrivateMessage(func(types.PrivateMessage)) error
+	Publish(string, string) error // channel, message
 }
 
-type IRCService struct {
+type Twitch struct {
 	displayName string
 	channel     string
 	irc         IRC
 	upstream    chan types.Message
+	log         *log.Logger
 }
 
 const (
@@ -30,41 +33,52 @@ var (
 	UserHighLightStyle = lipgloss.NewStyle().Bold(true).Background(lipgloss.Color(UserHighlightColor))
 )
 
-var _ terminal.Twitch = IRCService{}
+var _ terminal.IRC = Twitch{}
 
-func NewIRCService(displayName string, channel string, irc IRC) IRCService {
-	return IRCService{
+func NewTwitch(irc IRC, log *log.Logger, displayName string, channel string) Twitch {
+	s := Twitch{
 		irc:         irc,
 		displayName: displayName,
 		channel:     channel,
 		upstream:    make(chan types.Message),
+		log:         log,
 	}
-}
 
-func (c IRCService) GetMessageSource() <-chan types.Message {
-	c.irc.OnPrivateMessage(func(incoming types.PrivateMessage) {
+	err := s.irc.OnPrivateMessage(func(incoming types.PrivateMessage) {
 		styled := incoming
+		styled.Channel = channel
 		if styled.Color == "" {
 			styled.Color = DefaultNameColor
 		}
 
-		styled.Text = highlightUserMentions(styled.Text, c.displayName)
+		styled.Text = highlightUserMentions(styled.Text, s.displayName)
 
 		styled.Name = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(styled.Color)).Render(styled.Name)
-		if incoming.Name == c.displayName {
-			styled.Name = UserHighLightStyle.Render(c.displayName)
+		if incoming.Name == s.displayName {
+			styled.Name = UserHighLightStyle.Render(s.displayName)
 		}
 
-		c.upstream <- styled
+		s.upstream <- styled
 	})
+	defer func() {
+		if err != nil {
+			s.log.Printf("irc: setting OnPrivateMessage behavior: %v\n", err)
+		}
+	}()
+
+	return s
+}
+
+func (c Twitch) IncomingMessages() <-chan types.Message {
 	return c.upstream
 }
 
-func (c IRCService) Publish(msg string) {
-	c.irc.Say(c.channel, msg)
+func (c Twitch) Publish(msg string) {
+	c.irc.Publish(c.channel, msg)
 	c.upstream <- types.PrivateMessage{
-		Name: UserHighLightStyle.Render(c.displayName),
-		Text: highlightUserMentions(msg, c.displayName),
+		Name:    UserHighLightStyle.Render(c.displayName),
+		Text:    highlightUserMentions(msg, c.displayName),
+		Channel: c.channel,
 	}
 }
 

@@ -2,6 +2,7 @@ package irc
 
 import (
 	"fmt"
+	"log"
 	"testing"
 
 	"github.com/atye/ttchat/internal/types"
@@ -15,11 +16,13 @@ type irc struct {
 }
 
 // pass in the callback function
-func (i *irc) OnPrivateMessage(f func(types.PrivateMessage)) {
+func (i *irc) OnPrivateMessage(f func(types.PrivateMessage)) error {
 	i.callback = f
+	return nil
 }
 
-func (i *irc) Say(string, string) {}
+func (i *irc) Publish(string, string) error { return nil }
+
 func TestGetMessageSource(t *testing.T) {
 	tests := []struct {
 		Name            string
@@ -84,9 +87,9 @@ func TestGetMessageSource(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			incomingIRC := &irc{}
-			i := NewIRCService(test.userDisplayName, "testChannel", incomingIRC)
+			i := NewTwitch(incomingIRC, log.Default(), test.userDisplayName, "testChannel")
 
-			s := i.GetMessageSource()
+			s := i.IncomingMessages()
 			go incomingIRC.callback(test.pm)
 
 			m := <-s
@@ -122,9 +125,9 @@ func TestPublish(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			incomingIRC := &irc{}
-			i := NewIRCService(test.name, "testChannel", incomingIRC)
+			i := NewTwitch(incomingIRC, log.Default(), test.name, "testChannel")
 
-			s := i.GetMessageSource()
+			s := i.IncomingMessages()
 			go i.Publish(test.text)
 
 			m := <-s

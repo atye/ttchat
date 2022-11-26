@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/atye/ttchat/internal/auth"
@@ -40,7 +40,7 @@ const (
 )
 
 var (
-	ErrNoChannel          = errors.New("no channel provided")
+	ErrNoChannel          = errors.New("no channels provided")
 	ErrNoClientID         = errors.New("no clientID in configuration file")
 	ErrNoUsername         = errors.New("no username in configuration file")
 	ErrInvalidAccessToken = errors.New("invalid access token")
@@ -61,12 +61,15 @@ ttchat -c ludwing --token $ACCESS_TOKEN
 		Run: func(cmd *cobra.Command, args []string) {
 			rand.Seed(time.Now().UTC().UnixNano())
 
-			channel, err := cmd.Flags().GetString("channel")
+			f, _ := os.Create("out.txt")
+			logger := log.New(f, "", log.LstdFlags)
+
+			channels, err := cmd.Flags().GetStringSlice("channel")
 			if err != nil {
 				errExit(err)
 			}
 
-			if channel == "" {
+			if len(channels) == 0 {
 				errExit(ErrNoChannel)
 			}
 
@@ -91,7 +94,7 @@ ttchat -c ludwing --token $ACCESS_TOKEN
 			}
 			oidcVerifier := openid.CoreOSVerifier{Verifier: provider.Verifier(&oidc.Config{ClientID: conf.ClientID})}
 
-			accessToken, err := getAccessToken(token, conf, oidcVerifier)
+			accessToken, err := getAccessToken(logger, token, conf, oidcVerifier)
 			if err != nil {
 				errExit(err)
 			}
@@ -101,7 +104,6 @@ ttchat -c ludwing --token $ACCESS_TOKEN
 				errExit(err)
 			}
 
-			// Get user display name
 			tc, err := helix.NewClient(&helix.Options{
 				ClientID:        conf.ClientID,
 				UserAccessToken: accessToken,
@@ -114,25 +116,26 @@ ttchat -c ludwing --token $ACCESS_TOKEN
 			if err != nil {
 				errExit(err)
 			}
-			//
 
-			// Create IRC client and start
-			ircClient := client.NewGempirClient(conf.Username, channel, accessToken)
-			c := irc.NewIRCService(displayName, channel, ircClient)
+			var channelModels []*terminal.Channel
+			for _, c := range channels {
+				conn := irc.NewTwitch(client.NewGempirClient(conf.Username, c, accessToken), logger, displayName, c)
+				channelModels = append(channelModels, terminal.NewChannel(conn, c, conf.LineSpacing))
+			}
 
-			if tea.NewProgram(terminal.NewModel(c, conf.LineSpacing), tea.WithAltScreen()).Start() != nil {
+			if tea.NewProgram(terminal.NewModel(logger, channelModels...), tea.WithAltScreen()).Start() != nil {
 				errExit(err)
 			}
 		},
 	}
 
-	rootCmd.Flags().StringP("channel", "c", "", "channel to connect to")
+	rootCmd.Flags().StringSliceP("channel", "c", []string{}, "channels to connect to")
 	err := rootCmd.MarkFlagRequired("channel")
 	if err != nil {
 		errExit(err)
 	}
 
-	rootCmd.Flags().StringP("token", "t", "", `oauth token of the from "oauth:token" or "token"`)
+	rootCmd.Flags().StringP("token", "t", "", `provide your own oauth access token to bypass browser login (must have chat:read and chat:edit scopes)`)
 	return rootCmd
 }
 
@@ -163,19 +166,9 @@ func getConfig(hd string) (Config, error) {
 	return conf, nil
 }
 
-func getAccessToken(tokenFlagValue string, conf Config, verifier auth.TokenVerifyier) (string, error) {
+func getAccessToken(logger *log.Logger, tokenFlagValue string, conf Config, verifier auth.TokenVerifyier) (string, error) {
 	if tokenFlagValue != "" {
-		s := strings.Split(tokenFlagValue, ":")
-		switch len(s) {
-		// oauth:token
-		case 2:
-			return s[1], nil
-		// token
-		case 1:
-			return s[0], nil
-		default:
-			return "", fmt.Errorf("failed to parse token")
-		}
+		return tokenFlagValue, nil
 	}
 
 	oauthConf := &oauth2.Config{

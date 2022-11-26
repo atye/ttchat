@@ -1,15 +1,21 @@
 package types
 
 type Message interface {
+	GetChannel() string
 	GetName() string
 	GetColor() string
 	GetText() string
 }
 
 type PrivateMessage struct {
-	Name  string
-	Color string
-	Text  string
+	Channel string
+	Name    string
+	Color   string
+	Text    string
+}
+
+func (m PrivateMessage) GetChannel() string {
+	return m.Channel
 }
 
 func (m PrivateMessage) GetName() string {

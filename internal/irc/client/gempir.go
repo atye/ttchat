@@ -24,7 +24,7 @@ func NewGempirClient(username string, channel string, accessToken string) Gempir
 	return Gempir{irc: c}
 }
 
-func (g Gempir) OnPrivateMessage(f func(types.PrivateMessage)) {
+func (g Gempir) OnPrivateMessage(f func(types.PrivateMessage)) error {
 	g.irc.OnPrivateMessage(func(message twitch.PrivateMessage) {
 		f(types.PrivateMessage{
 			Name:  message.User.DisplayName,
@@ -32,8 +32,10 @@ func (g Gempir) OnPrivateMessage(f func(types.PrivateMessage)) {
 			Color: message.User.Color,
 		})
 	})
+	return nil
 }
 
-func (g Gempir) Say(channel string, msg string) {
+func (g Gempir) Publish(channel string, msg string) error {
 	g.irc.Say(channel, msg)
+	return nil
 }
