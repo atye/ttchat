@@ -52,9 +52,8 @@ redirectPort: "8080"
 
 `ttchat --channel sodapoppin --channel hasanabi`
 
-Obtaining an OAuth access token requires your authorization via web browser. See https://dev.twitch.tv/docs/authentication/getting-tokens-oauth for more details. To provide your own token, use the `--token` flag.
+Obtaining an OAuth access token requires your authorization via web browser. See https://dev.twitch.tv/docs/authentication/getting-tokens-oauth for more details. To provide your own token, use the `--token` flag. The token must have the `chat:edit` and `chat:read` scopes.
 
 `ttchat --channel sodapoppin --token $TOKEN`
 
-## Notes
-- The token must have the `chat:edit` and `chat:read` scopes
+Use `Tab` and `ShiftTab` to navigate channels.
