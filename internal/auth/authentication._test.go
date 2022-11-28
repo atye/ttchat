@@ -71,7 +71,7 @@ func TestGetOAuthToken(t *testing.T) {
 			},
 		}
 
-		tkn, err := GetOAuthToken(conf, verifier{}, u)
+		tkn, err := GetAccessToken(conf, verifier{}, u)
 		if err != nil {
 			t.Fatal(err)
 		}
