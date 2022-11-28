@@ -1,6 +1,6 @@
 # ttchat
 
-Connect to a Twitch channel's chat from your terminal.
+Connect to Twitch channels' chat from your terminal.
 
 ![](demo.gif)
 
