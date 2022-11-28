@@ -31,14 +31,14 @@ func NewChannel(irc IRC, name string, lineSpacing int) *Channel {
 	}
 }
 
-func (c *Channel) InitLines(lines int) {
+func (c *Channel) initLines(lines int) {
 	c.lines = make([]line, lines)
 	for i := 0; i < len(c.lines); i++ {
 		c.lines[i] = line{value: "\n"}
 	}
 }
 
-func (c *Channel) Update(msg types.Message) {
+func (c *Channel) update(msg types.Message) {
 	for i := 0; i < c.lineSpacing; i++ {
 		c.lines = append(c.lines[1:], line{value: "\n"})
 	}
@@ -52,7 +52,7 @@ func (c *Channel) Update(msg types.Message) {
 	c.lines = append(c.lines[len(newLines):], newLines...)
 }
 
-func (c *Channel) Resize(height int, width int) {
+func (c *Channel) resize(height int, width int) {
 	newLines := make([]line, height)
 	newLinesIndex := len(newLines) - 1
 	linesIndex := len(c.lines) - 1

@@ -32,7 +32,7 @@ var (
 	errNoAccessToken         = errors.New("access_token not found")
 )
 
-func GetOAuthToken(conf *oauth2.Config, verifier TokenVerifyier, util Utils) (string, error) {
+func GetAccessToken(conf *oauth2.Config, verifier TokenVerifyier, util Utils) (string, error) {
 	state, err := util.NewUUID()
 	if err != nil {
 		return "", err
@@ -77,6 +77,30 @@ func GetOAuthToken(conf *oauth2.Config, verifier TokenVerifyier, util Utils) (st
 	case err := <-errCh:
 		return "", err
 	}
+}
+
+func ValidateAccessToken(accessToken string) error {
+	r, err := http.NewRequest("GET", "https://id.twitch.tv/oauth2/validate", nil)
+	if err != nil {
+		return err
+	}
+
+	r.Header.Set("Authorization", fmt.Sprintf("OAuth %s", accessToken))
+	resp, err := http.DefaultClient.Do(r)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return fmt.Errorf("unauthorized")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("invaild access token: status code: %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 func buildUserLoginURL(conf *oauth2.Config, state string, nonce string) (string, error) {

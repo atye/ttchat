@@ -1,13 +1,11 @@
-package cmd
+package entrypoint
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"math/rand"
-	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -40,13 +38,6 @@ const (
 	DefaultRedirectPort = "9999"
 )
 
-var (
-	ErrNoChannel          = errors.New("no channels provided")
-	ErrNoClientID         = errors.New("no clientID in configuration file")
-	ErrNoUsername         = errors.New("no username in configuration file")
-	ErrInvalidAccessToken = errors.New("invalid access token")
-)
-
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "ttchat",
@@ -70,10 +61,10 @@ ttchat --channel GothamChess --token $TOKEN
 			}
 
 			if len(channels) == 0 {
-				errExit(ErrNoChannel)
+				errExit(fmt.Errorf("no channels provided"))
 			}
 
-			token, err := cmd.Flags().GetString("token")
+			accessToken, err := cmd.Flags().GetString("token")
 			if err != nil {
 				errExit(err)
 			}
@@ -88,20 +79,22 @@ ttchat --channel GothamChess --token $TOKEN
 				errExit(err)
 			}
 
-			provider, err := oidc.NewProvider(context.Background(), "https://id.twitch.tv/oauth2")
-			if err != nil {
-				errExit(err)
-			}
-			oidcVerifier := openid.CoreOSVerifier{Verifier: provider.Verifier(&oidc.Config{ClientID: conf.ClientID})}
+			if accessToken == "" {
+				provider, err := oidc.NewProvider(context.Background(), "https://id.twitch.tv/oauth2")
+				if err != nil {
+					errExit(err)
+				}
+				oidcVerifier := openid.CoreOSVerifier{Verifier: provider.Verifier(&oidc.Config{ClientID: conf.ClientID})}
 
-			accessToken, err := getAccessToken(logger, token, conf, oidcVerifier)
-			if err != nil {
-				errExit(err)
-			}
+				accessToken, err = getAccessToken(logger, conf, oidcVerifier)
+				if err != nil {
+					errExit(err)
+				}
 
-			err = validateAccessToken(accessToken)
-			if err != nil {
-				errExit(err)
+				err = auth.ValidateAccessToken(accessToken)
+				if err != nil {
+					errExit(err)
+				}
 			}
 
 			tc, err := helix.NewClient(&helix.Options{
@@ -152,11 +145,11 @@ func getConfig(hd string) (Config, error) {
 	}
 
 	if conf.ClientID == "" {
-		return Config{}, ErrNoClientID
+		return Config{}, fmt.Errorf("no clientID provided")
 	}
 
 	if conf.Username == "" {
-		return Config{}, ErrNoUsername
+		return Config{}, fmt.Errorf("no username provided")
 	}
 
 	if conf.RedirectPort == "" {
@@ -166,11 +159,7 @@ func getConfig(hd string) (Config, error) {
 	return conf, nil
 }
 
-func getAccessToken(logger *log.Logger, tokenFlagValue string, conf Config, verifier auth.TokenVerifyier) (string, error) {
-	if tokenFlagValue != "" {
-		return tokenFlagValue, nil
-	}
-
+func getAccessToken(logger *log.Logger, conf Config, verifier auth.TokenVerifyier) (string, error) {
 	oauthConf := &oauth2.Config{
 		ClientID: conf.ClientID,
 		Scopes:   []string{"openid", "chat:read", "chat:edit"},
@@ -194,35 +183,11 @@ func getAccessToken(logger *log.Logger, tokenFlagValue string, conf Config, veri
 		NewUUID: f,
 	}
 
-	t, err := auth.GetOAuthToken(oauthConf, verifier, u)
+	t, err := auth.GetAccessToken(oauthConf, verifier, u)
 	if err != nil {
 		return "", err
 	}
 	return t, nil
-}
-
-func validateAccessToken(accessToken string) error {
-	r, err := http.NewRequest("GET", "https://id.twitch.tv/oauth2/validate", nil)
-	if err != nil {
-		return err
-	}
-
-	r.Header.Set("Authorization", fmt.Sprintf("OAuth %s", accessToken))
-	resp, err := http.DefaultClient.Do(r)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusUnauthorized {
-		return ErrInvalidAccessToken
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("invaild access token: status code: %d", resp.StatusCode)
-	}
-
-	return nil
 }
 
 type twitchAPI interface {

@@ -23,7 +23,7 @@ func (i *irc) OnPrivateMessage(f func(types.PrivateMessage)) error {
 
 func (i *irc) Publish(string, string) error { return nil }
 
-func TestGetMessageSource(t *testing.T) {
+func TestIncomingMessages(t *testing.T) {
 	tests := []struct {
 		Name            string
 		userDisplayName string

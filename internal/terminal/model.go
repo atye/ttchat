@@ -91,6 +91,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.activeChannel++
 			}
 			m.setTabs(m.channels[m.activeChannel].name)
+		case tea.KeyShiftTab:
+			if m.activeChannel-1 < 0 {
+				m.activeChannel = len(m.channels) - 1
+			} else {
+				m.activeChannel--
+			}
+			m.setTabs(m.channels[m.activeChannel].name)
 		default:
 			var cmd tea.Cmd
 			m.textInput, cmd = m.textInput.Update(msg)
@@ -105,7 +112,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					ch.InitLines(msg.Height - linesOffset)
+					ch.initLines(msg.Height - linesOffset)
 				}()
 			}
 			wg.Wait()
@@ -116,7 +123,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					ch.Resize(msg.Height-linesOffset, msg.Width)
+					ch.resize(msg.Height-linesOffset, msg.Width)
 				}()
 			}
 			wg.Wait()
@@ -134,8 +141,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.log.Printf("no channel found for %s\n", msg.GetChannel())
 			return m, listenForMessages(m)
 		}
-
-		ch.Update(msg)
+		ch.update(msg)
 		return m, listenForMessages(m)
 
 	default:
@@ -159,21 +165,21 @@ func (m *Model) View() string {
 var (
 	highlight = lipgloss.AdaptiveColor{Light: "#efeff1", Dark: "#6441A5"}
 
-	tab = lipgloss.NewStyle().
-		Border(lipgloss.NormalBorder(), true).
-		BorderForeground(highlight).
-		Padding(0, 1)
+	border = lipgloss.Border{
+		Bottom: "─",
+	}
 
-	activeTab = tab.Copy().Border(lipgloss.ThickBorder(), true)
+	active    = lipgloss.NewStyle().Foreground(lipgloss.Color("#6441A5")).Border(border).BorderForeground(highlight)
+	nonActive = lipgloss.NewStyle().Border(border)
 )
 
 func (m *Model) setTabs(activeTabName string) {
 	var tabs []string
 	for _, ch := range m.channels {
 		if ch.name == activeTabName {
-			tabs = append(tabs, activeTab.Render(ch.name))
+			tabs = append(tabs, active.Render(ch.name))
 		} else {
-			tabs = append(tabs, tab.Render(ch.name))
+			tabs = append(tabs, nonActive.Render(ch.name))
 		}
 	}
 	row := lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
