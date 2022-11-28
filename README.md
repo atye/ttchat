@@ -56,4 +56,8 @@ Obtaining an OAuth access token requires your authorization via web browser. See
 
 `ttchat --channel sodapoppin --token $TOKEN`
 
-Use `Tab` and `ShiftTab` to navigate channels.
+# Usage
+
+| Syntax      | Description |
+| ----------- | ----------- |
+| Tab/ShiftTab      | Next/previous channel       |
