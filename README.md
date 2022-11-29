@@ -58,6 +58,6 @@ Obtaining an OAuth access token requires your authorization via web browser. See
 
 # Usage
 
-| Syntax      | Description |
+| Key      | Description |
 | ----------- | ----------- |
 | Tab/ShiftTab      | Next/previous channel       |
