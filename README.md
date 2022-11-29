@@ -1,7 +1,5 @@
 # ttchat
 
-Connect to Twitch channels' chat from your terminal.
-
 ![](demo.gif)
 
 # Installing
