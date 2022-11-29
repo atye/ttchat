@@ -98,4 +98,5 @@ out:
 		}
 	}
 	c.lines = newLines
+	c.width = width
 }

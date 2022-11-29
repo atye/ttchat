@@ -9,19 +9,16 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// build a Private Message
-// call callback function pasisng in pm
-type irc struct {
+type mockIrc struct {
 	callback func(types.PrivateMessage)
 }
 
-// pass in the callback function
-func (i *irc) OnPrivateMessage(f func(types.PrivateMessage)) error {
+func (i *mockIrc) OnPrivateMessage(f func(types.PrivateMessage)) error {
 	i.callback = f
 	return nil
 }
 
-func (i *irc) Publish(string, string) error { return nil }
+func (i *mockIrc) Publish(string, string) error { return nil }
 
 func TestIncomingMessages(t *testing.T) {
 	tests := []struct {
@@ -86,7 +83,7 @@ func TestIncomingMessages(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			incomingIRC := &irc{}
+			incomingIRC := &mockIrc{}
 			i := NewTwitch(incomingIRC, log.Default(), test.userDisplayName, "testChannel")
 
 			s := i.IncomingMessages()
@@ -124,7 +121,7 @@ func TestPublish(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			incomingIRC := &irc{}
+			incomingIRC := &mockIrc{}
 			i := NewTwitch(incomingIRC, log.Default(), test.name, "testChannel")
 
 			s := i.IncomingMessages()
