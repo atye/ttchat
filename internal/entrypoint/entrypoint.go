@@ -5,13 +5,10 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/atye/ttchat/internal/auth"
-	"github.com/atye/ttchat/internal/auth/openid"
 	"github.com/atye/ttchat/internal/irc"
 	"github.com/atye/ttchat/internal/irc/client"
 	"github.com/atye/ttchat/internal/terminal"
@@ -21,38 +18,32 @@ import (
 	"github.com/nicklaw5/helix"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
-
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/twitch"
-	"gopkg.in/yaml.v3"
 )
-
-type Config struct {
-	ClientID     string `yaml:"clientID"`
-	Username     string `yaml:"username"`
-	RedirectPort string `yaml:"redirectPort"`
-	LineSpacing  int    `yaml:"lineSpacing"`
-}
 
 const (
 	DefaultRedirectPort = "9999"
 )
 
+var (
+	newUUID = func() (string, error) {
+		u, err := uuid.NewUUID()
+		if err != nil {
+			return "", err
+		}
+		return u.String(), nil
+	}
+)
+
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "ttchat",
-		Short: "Connect to twitch chat in your terminal",
+		Short: "Connect to twitch chats in your terminal",
 		Long: `
-ttchat is a terminal application that connects to a twitch channel's
-chat using a small configuration file. See repo for more details.
-
 ttchat -h
 ttchat --channel GothamChess --channel chessbrah
 ttchat --channel GothamChess --token $TOKEN
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			rand.Seed(time.Now().UTC().UnixNano())
-
 			logger := log.New(io.Discard, "", log.LstdFlags)
 
 			channels, err := cmd.Flags().GetStringSlice("channel")
@@ -74,30 +65,51 @@ ttchat --channel GothamChess --token $TOKEN
 				errExit(err)
 			}
 
-			conf, err := getConfig(hd)
+			conf, err := newConfig(hd)
 			if err != nil {
 				errExit(err)
 			}
 
-			if accessToken == "" {
-				provider, err := oidc.NewProvider(context.Background(), "https://id.twitch.tv/oauth2")
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			if accessToken != "" {
+				err = auth.ValidateTwitchAccessToken(ctx, accessToken)
 				if err != nil {
 					errExit(err)
 				}
-				oidcVerifier := openid.CoreOSVerifier{Verifier: provider.Verifier(&oidc.Config{ClientID: conf.ClientID})}
-
-				accessToken, err = getAccessToken(logger, conf, oidcVerifier)
+			} else {
+				accessToken = conf.Token
+				err = auth.ValidateTwitchAccessToken(ctx, accessToken)
 				if err != nil {
-					errExit(err)
-				}
+					switch err {
+					case auth.ErrUnauthorized:
+						ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+						defer cancel()
 
-				err = auth.ValidateAccessToken(accessToken)
-				if err != nil {
-					errExit(err)
+						provider, err := oidc.NewProvider(ctx, "https://id.twitch.tv/oauth2")
+						if err != nil {
+							errExit(err)
+						}
+						verifier := auth.CoreOSVerifier{Verifier: provider.Verifier(&oidc.Config{ClientID: conf.ClientID})}
+
+						accessToken, err = auth.NewTwitchAccessToken(ctx, conf.ClientID, conf.RedirectPort, verifier, browser.OpenURL, newUUID)
+						if err != nil {
+							errExit(err)
+						}
+					default:
+						errExit(err)
+					}
 				}
 			}
 
-			tc, err := helix.NewClient(&helix.Options{
+			conf.Token = accessToken
+			err = conf.save()
+			if err != nil {
+				errExit(err)
+			}
+
+			helix, err := helix.NewClient(&helix.Options{
 				ClientID:        conf.ClientID,
 				UserAccessToken: accessToken,
 			})
@@ -105,14 +117,14 @@ ttchat --channel GothamChess --token $TOKEN
 				errExit(err)
 			}
 
-			displayName, err := getUserDisplayName(conf, accessToken, tc)
+			displayName, err := getUserDisplayName(helix, conf.Username, accessToken)
 			if err != nil {
 				errExit(err)
 			}
 
 			var channelModels []*terminal.Channel
 			for _, c := range channels {
-				conn := irc.NewTwitch(client.NewGempirClient(conf.Username, c, accessToken), logger, displayName, c)
+				conn := irc.NewTwitch(client.NewGempirClient(logger, conf.Username, c, accessToken), logger, displayName, c)
 				channelModels = append(channelModels, terminal.NewChannel(conn, c, conf.LineSpacing))
 			}
 
@@ -132,78 +144,20 @@ ttchat --channel GothamChess --token $TOKEN
 	return rootCmd
 }
 
-func getConfig(hd string) (Config, error) {
-	f, err := os.ReadFile(filepath.Join(hd, ".ttchat", "config.yaml"))
-	if err != nil {
-		return Config{}, err
-	}
-
-	var conf Config
-	err = yaml.Unmarshal(f, &conf)
-	if err != nil {
-		return Config{}, err
-	}
-
-	if conf.ClientID == "" {
-		return Config{}, fmt.Errorf("no clientID provided")
-	}
-
-	if conf.Username == "" {
-		return Config{}, fmt.Errorf("no username provided")
-	}
-
-	if conf.RedirectPort == "" {
-		conf.RedirectPort = DefaultRedirectPort
-	}
-
-	return conf, nil
-}
-
-func getAccessToken(logger *log.Logger, conf Config, verifier auth.TokenVerifyier) (string, error) {
-	oauthConf := &oauth2.Config{
-		ClientID: conf.ClientID,
-		Scopes:   []string{"openid", "chat:read", "chat:edit"},
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  twitch.Endpoint.AuthURL,
-			TokenURL: twitch.Endpoint.TokenURL,
-		},
-		RedirectURL: fmt.Sprintf("http://localhost:%s", conf.RedirectPort),
-	}
-
-	f := func() (string, error) {
-		u, err := uuid.NewUUID()
-		if err != nil {
-			return "", err
-		}
-		return u.String(), nil
-	}
-
-	u := auth.Utils{
-		OpenURL: browser.OpenURL,
-		NewUUID: f,
-	}
-
-	t, err := auth.GetAccessToken(oauthConf, verifier, u)
-	if err != nil {
-		return "", err
-	}
-	return t, nil
-}
-
 type twitchAPI interface {
 	GetUsers(params *helix.UsersParams) (*helix.UsersResponse, error)
 }
 
-func getUserDisplayName(conf Config, accessToken string, api twitchAPI) (string, error) {
-	resp, err := api.GetUsers(&helix.UsersParams{Logins: []string{conf.Username}})
+func getUserDisplayName(twitch twitchAPI, username string, accessToken string) (string, error) {
+	resp, err := twitch.GetUsers(&helix.UsersParams{Logins: []string{username}})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("getting %s's display name: %w", username, err)
 	}
 	if resp.ErrorMessage != "" {
-		return "", fmt.Errorf(resp.ErrorMessage)
+		return "", fmt.Errorf("getting %s's display name: %w", username, fmt.Errorf(resp.ErrorMessage))
 	}
 
-	displayName := conf.Username
+	displayName := username
 	if len(resp.Data.Users) >= 1 {
 		if n := resp.Data.Users[0].DisplayName; n != "" {
 			displayName = n
@@ -213,6 +167,6 @@ func getUserDisplayName(conf Config, accessToken string, api twitchAPI) (string,
 }
 
 func errExit(err error) {
-	fmt.Fprintf(os.Stderr, "%v\n", err)
+	fmt.Fprintf(os.Stderr, "error: %v\n", err)
 	os.Exit(1)
 }

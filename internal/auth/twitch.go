@@ -5,11 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/twitch"
 )
 
 type TokenVerifyier interface {
@@ -20,27 +22,36 @@ type IDToken interface {
 	Claims(v interface{}) error
 }
 
-type Utils struct {
-	OpenURL func(url string) error
-	NewUUID func() (string, error)
-}
+type OpenURL func(url string) error
+type NewUUID func() (string, error)
 
 var (
 	errFailedStateValidation = errors.New("failed state validation")
 	errFailedNonceValidation = errors.New("failed nonce validation")
 	errNoIdToken             = errors.New("id_token not found")
 	errNoAccessToken         = errors.New("access_token not found")
+	ErrUnauthorized          = errors.New("unauthorized")
 )
 
-func GetAccessToken(conf *oauth2.Config, verifier TokenVerifyier, util Utils) (string, error) {
-	state, err := util.NewUUID()
+func NewTwitchAccessToken(ctx context.Context, clientID string, redirectPort string, verifier TokenVerifyier, openURL OpenURL, newUUID NewUUID) (string, error) {
+	state, err := newUUID()
 	if err != nil {
 		return "", err
 	}
 
-	nonce, err := util.NewUUID()
+	nonce, err := newUUID()
 	if err != nil {
 		return "", err
+	}
+
+	conf := &oauth2.Config{
+		ClientID: clientID,
+		Scopes:   []string{"openid", "chat:read", "chat:edit"},
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  twitch.Endpoint.AuthURL,
+			TokenURL: twitch.Endpoint.TokenURL,
+		},
+		RedirectURL: fmt.Sprintf("http://localhost:%s", redirectPort),
 	}
 
 	u, err := url.Parse(conf.RedirectURL)
@@ -66,7 +77,7 @@ func GetAccessToken(conf *oauth2.Config, verifier TokenVerifyier, util Utils) (s
 
 	go listenForRedirect(opts, errCh, tokenCh)
 
-	err = util.OpenURL(addr)
+	err = openURL(addr)
 	if err != nil {
 		return "", err
 	}
@@ -76,11 +87,13 @@ func GetAccessToken(conf *oauth2.Config, verifier TokenVerifyier, util Utils) (s
 		return t, nil
 	case err := <-errCh:
 		return "", err
+	case <-ctx.Done():
+		return "", ctx.Err()
 	}
 }
 
-func ValidateAccessToken(accessToken string) error {
-	r, err := http.NewRequest("GET", "https://id.twitch.tv/oauth2/validate", nil)
+func ValidateTwitchAccessToken(ctx context.Context, accessToken string) error {
+	r, err := http.NewRequestWithContext(ctx, "GET", "https://id.twitch.tv/oauth2/validate", nil)
 	if err != nil {
 		return err
 	}
@@ -93,11 +106,15 @@ func ValidateAccessToken(accessToken string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return fmt.Errorf("unauthorized")
+		return ErrUnauthorized
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("invaild access token: status code: %d", resp.StatusCode)
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("reading error responde body: %w", err)
+		}
+		return fmt.Errorf("validating access token: %w", errors.New(string(b)))
 	}
 
 	return nil
@@ -134,7 +151,7 @@ func listenForRedirect(opts redirectOpts, errCh chan error, tokenCh chan string)
 		case "/":
 			err := opts.t.Execute(w, opts.port)
 			if err != nil {
-				errCh <- fmt.Errorf("failed to execute template: %v", err)
+				errCh <- fmt.Errorf("executing template: %v", err)
 				return
 			}
 		case "/callback":
@@ -160,7 +177,7 @@ func listenForRedirect(opts redirectOpts, errCh chan error, tokenCh chan string)
 
 			idToken, err := opts.verifier.Verify(context.Background(), tkn)
 			if err != nil {
-				errCh <- fmt.Errorf("failed to verify access token: %v", err)
+				errCh <- fmt.Errorf("verifying access token: %v", err)
 				return
 			}
 
@@ -170,7 +187,7 @@ func listenForRedirect(opts redirectOpts, errCh chan error, tokenCh chan string)
 
 			err = idToken.Claims(&claims)
 			if err != nil {
-				errCh <- fmt.Errorf("failed to decode id_token claims: %v", err)
+				errCh <- fmt.Errorf("decoding token claims: %v", err)
 				return
 			}
 

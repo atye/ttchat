@@ -31,6 +31,7 @@ const (
 
 var (
 	UserHighLightStyle = lipgloss.NewStyle().Bold(true).Background(lipgloss.Color(UserHighlightColor))
+	Bold               = lipgloss.NewStyle().Bold(true)
 )
 
 var _ terminal.IRC = Twitch{}
@@ -53,7 +54,7 @@ func NewTwitch(irc IRC, log *log.Logger, displayName string, channel string) Twi
 
 		styled.Text = highlightUserMentions(styled.Text, s.displayName)
 
-		styled.Name = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(styled.Color)).Render(styled.Name)
+		styled.Name = Bold.Foreground(lipgloss.Color(styled.Color)).Render(styled.Name)
 		if incoming.Name == s.displayName {
 			styled.Name = UserHighLightStyle.Render(s.displayName)
 		}
