@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 )
@@ -60,4 +61,36 @@ func TestNewTwitchAccessToken(t *testing.T) {
 			t.Errorf("expected access token %s, got %s", want, got)
 		}
 	})
+}
+
+func TestValidateAccessToken(t *testing.T) {
+	callcount := 0
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch callcount {
+		case 0:
+			w.WriteHeader(http.StatusOK)
+			callcount++
+		case 1:
+			w.WriteHeader(http.StatusUnauthorized)
+			callcount++
+		case 2:
+			w.WriteHeader(http.StatusBadGateway)
+			callcount++
+		}
+	}))
+
+	err := ValidateTwitchAccessToken(context.Background(), ts.URL, "goodToken")
+	if err != nil {
+		t.Errorf("expected nil err, got %v", err)
+	}
+
+	err = ValidateTwitchAccessToken(context.Background(), ts.URL, "badToken")
+	if err == nil {
+		t.Errorf("expected an err, got %v", nil)
+	}
+
+	err = ValidateTwitchAccessToken(context.Background(), ts.URL, "goodToken")
+	if err == nil {
+		t.Errorf("expected an err, got %v", nil)
+	}
 }

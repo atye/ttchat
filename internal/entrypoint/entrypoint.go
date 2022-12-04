@@ -3,7 +3,6 @@ package entrypoint
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"time"
@@ -44,7 +43,9 @@ ttchat --channel GothamChess --channel chessbrah
 ttchat --channel GothamChess --token $TOKEN
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			logger := log.New(io.Discard, "", log.LstdFlags)
+			f, _ := os.Create("out.txt")
+			defer f.Close()
+			logger := log.New(f, "", log.LstdFlags)
 
 			channels, err := cmd.Flags().GetStringSlice("channel")
 			if err != nil {
@@ -74,13 +75,13 @@ ttchat --channel GothamChess --token $TOKEN
 			defer cancel()
 
 			if accessToken != "" {
-				err = auth.ValidateTwitchAccessToken(ctx, accessToken)
+				err = auth.ValidateTwitchAccessToken(ctx, auth.TwitchValidateURL, accessToken)
 				if err != nil {
 					errExit(err)
 				}
 			} else {
 				accessToken = conf.Token
-				err = auth.ValidateTwitchAccessToken(ctx, accessToken)
+				err = auth.ValidateTwitchAccessToken(ctx, auth.TwitchValidateURL, accessToken)
 				if err != nil {
 					switch err {
 					case auth.ErrUnauthorized:

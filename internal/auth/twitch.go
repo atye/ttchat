@@ -14,6 +14,10 @@ import (
 	"golang.org/x/oauth2/twitch"
 )
 
+const (
+	TwitchValidateURL = "https://id.twitch.tv/oauth2/validate"
+)
+
 type TokenVerifyier interface {
 	Verify(context.Context, string) (IDToken, error)
 }
@@ -26,11 +30,7 @@ type OpenURL func(url string) error
 type NewUUID func() (string, error)
 
 var (
-	errFailedStateValidation = errors.New("failed state validation")
-	errFailedNonceValidation = errors.New("failed nonce validation")
-	errNoIdToken             = errors.New("id_token not found")
-	errNoAccessToken         = errors.New("access_token not found")
-	ErrUnauthorized          = errors.New("unauthorized")
+	ErrUnauthorized = errors.New("unauthorized")
 )
 
 func NewTwitchAccessToken(ctx context.Context, clientID string, redirectPort string, verifier TokenVerifyier, openURL OpenURL, newUUID NewUUID) (string, error) {
@@ -92,8 +92,8 @@ func NewTwitchAccessToken(ctx context.Context, clientID string, redirectPort str
 	}
 }
 
-func ValidateTwitchAccessToken(ctx context.Context, accessToken string) error {
-	r, err := http.NewRequestWithContext(ctx, "GET", "https://id.twitch.tv/oauth2/validate", nil)
+func ValidateTwitchAccessToken(ctx context.Context, url string, accessToken string) error {
+	r, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return err
 	}
@@ -165,13 +165,13 @@ func listenForRedirect(opts redirectOpts, errCh chan error, tokenCh chan string)
 			var idToken IDToken
 
 			if s := getValue(data, "state"); s != opts.state {
-				errCh <- errFailedStateValidation
+				errCh <- fmt.Errorf("failed state validation")
 				return
 			}
 
 			tkn := getValue(data, "id_token")
 			if tkn == "" {
-				errCh <- errNoIdToken
+				errCh <- fmt.Errorf("no id_token in response")
 				return
 			}
 
@@ -192,13 +192,13 @@ func listenForRedirect(opts redirectOpts, errCh chan error, tokenCh chan string)
 			}
 
 			if claims.Nonce != opts.nonce {
-				errCh <- errFailedNonceValidation
+				errCh <- fmt.Errorf("failed nonce validation")
 				return
 			}
 
 			accessToken := getValue(data, "access_token")
 			if accessToken == "" {
-				errCh <- errNoAccessToken
+				errCh <- fmt.Errorf("no access_token in response")
 				return
 			}
 

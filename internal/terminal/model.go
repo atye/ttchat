@@ -57,8 +57,7 @@ func (m *Model) Init() tea.Cmd {
 		ch := ch
 		go func() {
 			for {
-				msg := <-ch.incomingMsg
-				incomingMsg <- msg
+				incomingMsg <- <-ch.incomingMsg
 			}
 		}()
 	}
@@ -113,6 +112,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				go func() {
 					defer wg.Done()
 					ch.initLines(msg.Height - linesOffset)
+					ch.width = msg.Width
 				}()
 			}
 			wg.Wait()

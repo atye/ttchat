@@ -3,7 +3,6 @@ package client
 import (
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/atye/ttchat/internal/irc"
 	"github.com/atye/ttchat/internal/types"
@@ -20,13 +19,9 @@ func NewGempirClient(log *log.Logger, username string, channel string, accessTok
 	c := twitch.NewClient(username, fmt.Sprintf("oauth:%s", accessToken))
 	c.Join(channel)
 	go func() {
-		for {
-			err := c.Connect()
-			if err != nil {
-				log.Printf("disconnected from channel %s: %v\n", channel, err)
-				log.Println("retrying...")
-			}
-			time.Sleep(5 * time.Second)
+		err := c.Connect()
+		if err != nil {
+			log.Printf("disconnected from channel %s: %v\n", channel, err)
 		}
 	}()
 	return Gempir{irc: c}
