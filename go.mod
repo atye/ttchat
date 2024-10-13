@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/lipgloss v0.3.0
 	github.com/coreos/go-oidc/v3 v3.0.0
 	github.com/gempir/go-twitch-irc/v2 v2.8.1
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.6.0
 	github.com/muesli/reflow v0.3.0
 	github.com/nicklaw5/helix v1.25.0
 	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2
