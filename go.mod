@@ -12,7 +12,7 @@ require (
 	github.com/muesli/reflow v0.3.0
 	github.com/nicklaw5/helix v1.25.0
 	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2
-	github.com/spf13/cobra v1.2.1
+	github.com/spf13/cobra v1.8.1
 	golang.org/x/oauth2 v0.23.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -25,7 +25,7 @@ require (
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/go-jose/go-jose/v4 v4.0.2 // indirect
 	github.com/golang-jwt/jwt v3.2.1+incompatible // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
