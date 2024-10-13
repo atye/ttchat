@@ -10,7 +10,7 @@ require (
 	github.com/gempir/go-twitch-irc/v2 v2.5.0
 	github.com/google/uuid v1.3.0
 	github.com/muesli/reflow v0.3.0
-	github.com/nicklaw5/helix v1.24.0
+	github.com/nicklaw5/helix v1.25.0
 	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2
 	github.com/spf13/cobra v1.2.1
 	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
@@ -20,6 +20,7 @@ require (
 require (
 	github.com/atotto/clipboard v0.1.2 // indirect
 	github.com/containerd/console v1.0.1 // indirect
+	github.com/golang-jwt/jwt v3.2.1+incompatible // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
