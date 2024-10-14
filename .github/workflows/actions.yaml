@@ -24,7 +24,7 @@ jobs:
           go-version: 1.18
       -
         name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3.0.0
+        uses: goreleaser/goreleaser-action@v6.0.0
         with:
           args: release -f goreleaser.yaml --rm-dist
         env:
