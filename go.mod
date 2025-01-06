@@ -13,7 +13,7 @@ require (
 	github.com/nicklaw5/helix v1.25.0
 	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2
 	github.com/spf13/cobra v1.8.1
-	golang.org/x/oauth2 v0.23.0
+	golang.org/x/oauth2 v0.25.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
